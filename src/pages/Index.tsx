@@ -1,87 +1,95 @@
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Vote, Shield, Clock, Users, Award, Lock } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Shield, Vote, ChartBar, Users, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import Layout from "@/components/Layout";
 
 const Index = () => {
   const features = [
     {
-      icon: <Vote className="h-12 w-12 text-primary" />,
+      icon: <Shield className="w-12 h-12 text-primary" />,
       title: "Secure Voting",
-      description: "Cast your vote with confidence using our state-of-the-art secure voting system",
+      description: "State-of-the-art encryption and authentication to protect your vote",
     },
     {
-      icon: <Shield className="h-12 w-12 text-primary" />,
-      title: "Data Protection",
-      description: "Your data and votes are protected with advanced encryption and security measures",
+      icon: <Vote className="w-12 h-12 text-primary" />,
+      title: "Easy Participation",
+      description: "Simple and intuitive interface for casting your vote",
     },
     {
-      icon: <Clock className="h-12 w-12 text-primary" />,
+      icon: <ChartBar className="w-12 h-12 text-primary" />,
       title: "Real-time Results",
-      description: "View election results instantly as they happen with our real-time updates",
+      description: "Watch election results unfold in real-time with live updates",
     },
     {
-      icon: <Users className="h-12 w-12 text-primary" />,
-      title: "Multiple Elections",
-      description: "Participate in various elections with different candidates and positions",
-    },
-    {
-      icon: <Award className="h-12 w-12 text-primary" />,
+      icon: <Users className="w-12 h-12 text-primary" />,
       title: "Candidate Profiles",
-      description: "Learn about candidates through detailed profiles and campaign information",
-    },
-    {
-      icon: <Lock className="h-12 w-12 text-primary" />,
-      title: "Verified Identity",
-      description: "Ensure election integrity with our secure user verification system",
+      description: "Detailed information about each candidate to help you decide",
     },
   ];
 
   return (
     <Layout>
-      <div className="max-w-6xl mx-auto px-4">
-        <div className="text-center mb-12 space-y-4">
-          <h1 className="text-4xl md:text-5xl font-bold text-primary mb-4">
-            Welcome to VoteSecure
+      <div className="container mx-auto px-4 py-12">
+        {/* Hero Section */}
+        <div className="text-center mb-16">
+          <h1 className="text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent">
+            Secure Online Voting System
           </h1>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            Your trusted platform for secure and transparent online voting. Participate in
-            elections with confidence and make your voice heard.
+          <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
+            Experience democracy in the digital age with our secure, transparent, and easy-to-use voting platform.
           </p>
-          <div className="flex gap-4 justify-center mt-8">
-            <Button asChild size="lg" className="bg-primary hover:bg-primary/90">
-              <Link to="/register">Get Started</Link>
+          <div className="flex gap-4 justify-center">
+            <Button asChild size="lg">
+              <Link to="/register">
+                Get Started
+                <ArrowRight className="ml-2" />
+              </Link>
             </Button>
-            <Button asChild size="lg" variant="outline">
+            <Button variant="outline" size="lg" asChild>
               <Link to="/elections">View Elections</Link>
             </Button>
           </div>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
+        {/* Features Grid */}
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 mb-16">
           {features.map((feature, index) => (
-            <Card 
-              key={index} 
-              className="p-6 hover:shadow-lg transition-shadow border-2 hover:border-primary/50"
-            >
-              <div className="flex flex-col items-center text-center space-y-4">
-                {feature.icon}
-                <h3 className="text-xl font-semibold">{feature.title}</h3>
+            <Card key={index} className="text-center hover:shadow-lg transition-shadow">
+              <CardContent className="pt-6">
+                <div className="mb-4 flex justify-center">{feature.icon}</div>
+                <h3 className="text-xl font-semibold mb-2">{feature.title}</h3>
                 <p className="text-gray-600">{feature.description}</p>
-              </div>
+              </CardContent>
             </Card>
           ))}
         </div>
 
-        <div className="text-center bg-accent/10 rounded-lg p-8 mb-12">
+        {/* Call to Action */}
+        <div className="text-center bg-gradient-to-r from-primary/10 to-blue-600/10 rounded-2xl p-8 mb-16">
           <h2 className="text-3xl font-bold mb-4">Ready to Make Your Voice Heard?</h2>
           <p className="text-lg text-gray-600 mb-6">
-            Join thousands of voters who trust VoteSecure for fair and transparent elections.
+            Join thousands of voters who trust our platform for secure and transparent elections.
           </p>
-          <Button asChild size="lg" className="bg-accent hover:bg-accent/90 text-accent-foreground">
-            <Link to="/register">Create Account</Link>
+          <Button asChild size="lg">
+            <Link to="/register">Register Now</Link>
           </Button>
+        </div>
+
+        {/* Trust Indicators */}
+        <div className="grid md:grid-cols-3 gap-8 text-center">
+          <div>
+            <h3 className="text-4xl font-bold text-primary mb-2">100%</h3>
+            <p className="text-gray-600">Secure Voting</p>
+          </div>
+          <div>
+            <h3 className="text-4xl font-bold text-primary mb-2">24/7</h3>
+            <p className="text-gray-600">System Availability</p>
+          </div>
+          <div>
+            <h3 className="text-4xl font-bold text-primary mb-2">10k+</h3>
+            <p className="text-gray-600">Active Users</p>
+          </div>
         </div>
       </div>
     </Layout>
