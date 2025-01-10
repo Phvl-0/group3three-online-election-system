@@ -17,6 +17,7 @@ import {
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
+import { useElections, useAddElection, useDeleteElection } from "@/utils/electionUtils";
 
 // Form validation schema
 const electionFormSchema = z.object({
@@ -30,27 +31,9 @@ const AdminDashboard = () => {
   const { toast } = useToast();
   const [isCreating, setIsCreating] = useState(false);
   
-  // Mock elections data
-  const elections = [
-    {
-      id: 1,
-      title: "Presidential Election 2024",
-      status: "Active",
-      startDate: "2024-01-01",
-      endDate: "2024-11-05",
-      totalVotes: 1234,
-      candidates: 3,
-    },
-    {
-      id: 2,
-      title: "Board Member Elections",
-      status: "Scheduled",
-      startDate: "2024-06-01",
-      endDate: "2024-06-30",
-      totalVotes: 0,
-      candidates: 5,
-    },
-  ];
+  const { data: elections = [], isLoading } = useElections();
+  const addElectionMutation = useAddElection();
+  const deleteElectionMutation = useDeleteElection();
 
   const form = useForm<z.infer<typeof electionFormSchema>>({
     resolver: zodResolver(electionFormSchema),
@@ -62,21 +45,42 @@ const AdminDashboard = () => {
     },
   });
 
-  const handleDelete = (id: number) => {
-    toast({
-      title: "Election deleted",
-      description: "The election has been successfully deleted",
-    });
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteElectionMutation.mutateAsync(id);
+      toast({
+        title: "Election deleted",
+        description: "The election has been successfully deleted",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete the election",
+        variant: "destructive",
+      });
+    }
   };
 
-  const onSubmit = (values: z.infer<typeof electionFormSchema>) => {
-    console.log(values);
-    toast({
-      title: "Election created",
-      description: "The election has been successfully created",
-    });
-    setIsCreating(false);
-    form.reset();
+  const onSubmit = async (values: z.infer<typeof electionFormSchema>) => {
+    try {
+      await addElectionMutation.mutateAsync({
+        ...values,
+        status: "upcoming",
+        candidates: [],
+      });
+      toast({
+        title: "Election created",
+        description: "The election has been successfully created",
+      });
+      setIsCreating(false);
+      form.reset();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to create the election",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -196,7 +200,7 @@ const AdminDashboard = () => {
                       <td className="py-3 px-4">
                         <span
                           className={`px-2 py-1 rounded-full text-xs ${
-                            election.status === "Active"
+                            election.status === "active"
                               ? "bg-green-100 text-green-800"
                               : "bg-yellow-100 text-yellow-800"
                           }`}
@@ -209,7 +213,7 @@ const AdminDashboard = () => {
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-1">
                           <Users className="w-4 h-4" />
-                          {election.candidates}
+                          {election.candidates.length}
                         </div>
                       </td>
                       <td className="py-3 px-4">

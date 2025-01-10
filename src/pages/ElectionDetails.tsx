@@ -1,103 +1,209 @@
 import { useState } from "react";
 import { useParams } from "react-router-dom";
+import Layout from "@/components/Layout";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Plus, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import Layout from "@/components/Layout";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import * as z from "zod";
+import { useElections, useAddCandidate, useDeleteCandidate } from "@/utils/electionUtils";
+
+const candidateFormSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  party: z.string().min(1, "Party is required"),
+  bio: z.string().min(1, "Bio is required"),
+});
 
 const ElectionDetails = () => {
-  const { id } = useParams();
-  const [selectedCandidate, setSelectedCandidate] = useState("");
+  const { id } = useParams<{ id: string }>();
   const { toast } = useToast();
+  const [isAddingCandidate, setIsAddingCandidate] = useState(false);
 
-  // Mock election data
-  const election = {
-    id,
-    title: "Presidential Election 2024",
-    description: "Vote for the next president of the organization",
-    candidates: [
-      { id: "1", name: "John Doe", votes: 523, percentage: 45 },
-      { id: "2", name: "Jane Smith", votes: 489, percentage: 42 },
-      { id: "3", name: "Bob Johnson", votes: 156, percentage: 13 },
-    ],
-  };
+  const { data: elections = [] } = useElections();
+  const election = elections.find((e) => e.id === id);
+  const addCandidateMutation = useAddCandidate();
+  const deleteCandidateMutation = useDeleteCandidate();
 
-  const handleVote = () => {
-    if (!selectedCandidate) {
+  const form = useForm<z.infer<typeof candidateFormSchema>>({
+    resolver: zodResolver(candidateFormSchema),
+    defaultValues: {
+      name: "",
+      party: "",
+      bio: "",
+    },
+  });
+
+  const handleDeleteCandidate = async (candidateId: string) => {
+    if (!id) return;
+    try {
+      await deleteCandidateMutation.mutateAsync({ electionId: id, candidateId });
+      toast({
+        title: "Candidate deleted",
+        description: "The candidate has been successfully deleted",
+      });
+    } catch (error) {
       toast({
         title: "Error",
-        description: "Please select a candidate",
+        description: "Failed to delete the candidate",
         variant: "destructive",
       });
-      return;
     }
-    // TODO: Implement actual voting logic
-    toast({
-      title: "Success",
-      description: "Your vote has been recorded",
-    });
   };
+
+  const onSubmit = async (values: z.infer<typeof candidateFormSchema>) => {
+    if (!id) return;
+    try {
+      await addCandidateMutation.mutateAsync({
+        electionId: id,
+        candidate: values,
+      });
+      toast({
+        title: "Candidate added",
+        description: "The candidate has been successfully added",
+      });
+      setIsAddingCandidate(false);
+      form.reset();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to add the candidate",
+        variant: "destructive",
+      });
+    }
+  };
+
+  if (!election) {
+    return (
+      <Layout>
+        <div className="container mx-auto py-8">
+          <Card>
+            <CardContent className="py-8">
+              <p className="text-center text-muted-foreground">Election not found</p>
+            </CardContent>
+          </Card>
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout>
       <div className="container mx-auto py-8">
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle className="text-2xl">{election.title}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-gray-600 mb-6">{election.description}</p>
-            <div className="space-y-6">
-              <div className="border rounded-lg p-6">
-                <h3 className="text-lg font-semibold mb-4">Cast Your Vote</h3>
-                <RadioGroup
-                  value={selectedCandidate}
-                  onValueChange={setSelectedCandidate}
-                  className="space-y-4"
-                >
-                  {election.candidates.map((candidate) => (
-                    <div
-                      key={candidate.id}
-                      className="flex items-center space-x-2 p-2 hover:bg-gray-50 rounded-md"
-                    >
-                      <RadioGroupItem value={candidate.id} id={candidate.id} />
-                      <label
-                        htmlFor={candidate.id}
-                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                      >
-                        {candidate.name}
-                      </label>
-                    </div>
-                  ))}
-                </RadioGroup>
-                <Button onClick={handleVote} className="mt-4">
-                  Submit Vote
-                </Button>
-              </div>
+        <div className="space-y-8">
+          <div>
+            <h1 className="text-3xl font-bold mb-2">{election.title}</h1>
+            <p className="text-muted-foreground">{election.description}</p>
+          </div>
 
-              <div className="border rounded-lg p-6">
-                <h3 className="text-lg font-semibold mb-4">Live Results</h3>
-                <div className="space-y-4">
-                  {election.candidates.map((candidate) => (
-                    <div key={candidate.id}>
-                      <div className="flex justify-between text-sm mb-1">
-                        <span>{candidate.name}</span>
-                        <span>{candidate.votes} votes ({candidate.percentage}%)</span>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle>Candidates</CardTitle>
+              <Button onClick={() => setIsAddingCandidate(!isAddingCandidate)}>
+                <Plus className="mr-2" />
+                Add Candidate
+              </Button>
+            </CardHeader>
+            <CardContent>
+              {isAddingCandidate && (
+                <div className="mb-8">
+                  <Form {...form}>
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                      <FormField
+                        control={form.control}
+                        name="name"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Name</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Enter candidate name" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="party"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Party</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Enter party name" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="bio"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Bio</FormLabel>
+                            <FormControl>
+                              <Textarea
+                                placeholder="Enter candidate bio"
+                                {...field}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <div className="flex justify-end gap-4">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => setIsAddingCandidate(false)}
+                        >
+                          Cancel
+                        </Button>
+                        <Button type="submit">Add Candidate</Button>
                       </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2.5">
-                        <div
-                          className="bg-primary h-2.5 rounded-full"
-                          style={{ width: `${candidate.percentage}%` }}
-                        ></div>
-                      </div>
-                    </div>
-                  ))}
+                    </form>
+                  </Form>
                 </div>
+              )}
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {election.candidates.map((candidate) => (
+                  <Card key={candidate.id}>
+                    <CardHeader>
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <CardTitle className="text-xl">{candidate.name}</CardTitle>
+                          <p className="text-sm text-muted-foreground">{candidate.party}</p>
+                        </div>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => handleDeleteCandidate(candidate.id)}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-sm">{candidate.bio}</p>
+                    </CardContent>
+                  </Card>
+                ))}
               </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </Layout>
   );
