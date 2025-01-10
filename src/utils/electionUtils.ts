@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
-interface Candidate {
+export interface Candidate {
   id: string;
   name: string;
   party: string;
