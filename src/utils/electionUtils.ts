@@ -50,7 +50,7 @@ const addCandidate = async (electionId: string, candidate: Omit<Candidate, "id">
     if (election.id === electionId) {
       return {
         ...election,
-        candidates: [...election.candidates, newCandidate],
+        candidates: [...(election.candidates || []), newCandidate],
       };
     }
     return election;

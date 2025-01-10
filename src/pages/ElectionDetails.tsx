@@ -182,7 +182,7 @@ const ElectionDetails = () => {
               )}
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {election.candidates.map((candidate) => (
+                {election.candidates && election.candidates.map((candidate) => (
                   <Card key={candidate.id}>
                     <CardHeader>
                       <div className="flex justify-between items-start">
