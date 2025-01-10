@@ -64,7 +64,10 @@ const AdminDashboard = () => {
   const onSubmit = async (values: z.infer<typeof electionFormSchema>) => {
     try {
       await addElectionMutation.mutateAsync({
-        ...values,
+        title: values.title,
+        description: values.description,
+        startDate: values.startDate,
+        endDate: values.endDate,
         status: "upcoming",
         candidates: [],
       });

@@ -67,7 +67,11 @@ const ElectionDetails = () => {
     try {
       await addCandidateMutation.mutateAsync({
         electionId: id,
-        candidate: values,
+        candidate: {
+          name: values.name,
+          party: values.party,
+          bio: values.bio,
+        },
       });
       toast({
         title: "Candidate added",
