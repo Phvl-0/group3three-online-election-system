@@ -27,7 +27,7 @@ export const ElectionTableRow = ({ election, onDelete }: ElectionTableRowProps) 
       <td className="py-3 px-4">
         <div className="flex items-center gap-1">
           <Users className="w-4 h-4" />
-          {election.candidates.length}
+          {election.candidates?.length || 0}
         </div>
       </td>
       <td className="py-3 px-4">
