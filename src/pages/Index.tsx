@@ -31,35 +31,35 @@ const Index = () => {
 
   return (
     <Layout>
-      <div className="container mx-auto px-4 py-12">
+      <div className="container mx-auto px-4">
         {/* Hero Section */}
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="text-center mb-16"
+          className="text-center mb-8 md:mb-16"
         >
-          <h1 className="text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent">
+          <h1 className="text-3xl md:text-6xl font-bold mb-4 md:mb-6 bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent">
             Secure Online Voting System
           </h1>
-          <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
+          <p className="text-lg md:text-xl text-gray-600 mb-6 md:mb-8 max-w-2xl mx-auto">
             Experience democracy in the digital age with our secure, transparent, and easy-to-use voting platform.
           </p>
-          <div className="flex gap-4 justify-center">
-            <Button asChild size="lg" className="animate-pulse">
+          <div className="flex flex-col md:flex-row gap-4 justify-center">
+            <Button asChild size="lg" className="w-full md:w-auto animate-pulse">
               <Link to="/register">
                 Get Started
                 <ArrowRight className="ml-2" />
               </Link>
             </Button>
-            <Button variant="outline" size="lg" asChild>
+            <Button variant="outline" size="lg" asChild className="w-full md:w-auto">
               <Link to="/elections">View Elections</Link>
             </Button>
           </div>
         </motion.div>
 
         {/* Features Grid */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 mb-16">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-8 mb-8 md:mb-16">
           {features.map((feature, index) => (
             <motion.div
               key={index}
@@ -83,41 +83,44 @@ const Index = () => {
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.5 }}
-          className="text-center bg-gradient-to-r from-primary/10 to-blue-600/10 rounded-2xl p-8 mb-16"
+          className="text-center bg-gradient-to-r from-primary/10 to-blue-600/10 rounded-2xl p-4 md:p-8 mb-8 md:mb-16"
         >
-          <h2 className="text-3xl font-bold mb-4">Ready to Make Your Voice Heard?</h2>
-          <p className="text-lg text-gray-600 mb-6">
+          <h2 className="text-2xl md:text-3xl font-bold mb-4">Ready to Make Your Voice Heard?</h2>
+          <p className="text-base md:text-lg text-gray-600 mb-6">
             Join thousands of voters who trust our platform for secure and transparent elections.
           </p>
-          <Button asChild size="lg">
+          <Button asChild size="lg" className="w-full md:w-auto">
             <Link to="/register">Register Now</Link>
           </Button>
         </motion.div>
 
         {/* Trust Indicators */}
-        <div className="grid md:grid-cols-3 gap-8 text-center">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-8 text-center">
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5 }}
+            className="p-4"
           >
-            <h3 className="text-4xl font-bold text-primary mb-2">100%</h3>
+            <h3 className="text-3xl md:text-4xl font-bold text-primary mb-2">100%</h3>
             <p className="text-gray-600">Secure Voting</p>
           </motion.div>
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.1 }}
+            className="p-4"
           >
-            <h3 className="text-4xl font-bold text-primary mb-2">24/7</h3>
+            <h3 className="text-3xl md:text-4xl font-bold text-primary mb-2">24/7</h3>
             <p className="text-gray-600">System Availability</p>
           </motion.div>
           <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5, delay: 0.2 }}
+            className="p-4"
           >
-            <h3 className="text-4xl font-bold text-primary mb-2">10k+</h3>
+            <h3 className="text-3xl md:text-4xl font-bold text-primary mb-2">10k+</h3>
             <p className="text-gray-600">Active Users</p>
           </motion.div>
         </div>
