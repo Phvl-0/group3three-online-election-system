@@ -1,21 +1,13 @@
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
+import { Form } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useAddElection } from "@/utils/electionUtils";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useState } from "react";
+import { ElectionFormFields } from "./ElectionFormFields";
+import { ImageUpload } from "../shared/ImageUpload";
 
 const electionFormSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -32,7 +24,6 @@ interface ElectionFormProps {
 export const ElectionForm = ({ onClose }: ElectionFormProps) => {
   const { toast } = useToast();
   const addElectionMutation = useAddElection();
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
 
   const form = useForm<z.infer<typeof electionFormSchema>>({
     resolver: zodResolver(electionFormSchema),
@@ -43,18 +34,6 @@ export const ElectionForm = ({ onClose }: ElectionFormProps) => {
       endDate: "",
     },
   });
-
-  const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result as string);
-        form.setValue("image", reader.result);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
 
   const onSubmit = async (values: z.infer<typeof electionFormSchema>) => {
     try {
@@ -90,85 +69,8 @@ export const ElectionForm = ({ onClose }: ElectionFormProps) => {
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <FormField
-              control={form.control}
-              name="title"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Title</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Enter election title" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Description</FormLabel>
-                  <FormControl>
-                    <Textarea placeholder="Enter election description" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="startDate"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Start Date</FormLabel>
-                    <FormControl>
-                      <Input type="date" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="endDate"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>End Date</FormLabel>
-                    <FormControl>
-                      <Input type="date" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-            <FormField
-              control={form.control}
-              name="image"
-              render={() => (
-                <FormItem>
-                  <FormLabel>Election Image</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleImageChange}
-                      className="cursor-pointer"
-                    />
-                  </FormControl>
-                  {imagePreview && (
-                    <img
-                      src={imagePreview}
-                      alt="Preview"
-                      className="mt-2 w-32 h-32 object-cover rounded-lg"
-                    />
-                  )}
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <ElectionFormFields form={form} />
+            <ImageUpload form={form} name="image" label="Election Image" />
             <div className="flex justify-end gap-4">
               <Button type="button" variant="outline" onClick={onClose}>
                 Cancel
