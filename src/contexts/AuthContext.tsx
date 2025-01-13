@@ -18,14 +18,20 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const session = supabase.auth.getSession();
-    setUser(session ? { 
-      id: session.user?.id || '',
-      email: session.user?.email || '',
-      role: session.user?.user_metadata?.role || 'voter'
-    } : null);
-    setLoading(false);
+    // Get initial session
+    const initSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setUser(session ? {
+        id: session.user.id,
+        email: session.user.email || '',
+        role: session.user.user_metadata.role || 'voter'
+      } : null);
+      setLoading(false);
+    };
 
+    initSession();
+
+    // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session ? {
         id: session.user.id,
