@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/lib/supabase";
 
 export interface Candidate {
   id: string;
@@ -20,57 +21,61 @@ export interface Election {
   image?: string;
 }
 
-// Mock database (replace with real API calls later)
-let elections: Election[] = [];
-
 // API functions
 const fetchElections = async (): Promise<Election[]> => {
-  return elections;
+  const { data, error } = await supabase
+    .from('elections')
+    .select('*, candidates(*)');
+  
+  if (error) throw error;
+  return data || [];
 };
 
 const addElection = async (election: Omit<Election, "id" | "totalVotes">): Promise<Election> => {
-  const newElection: Election = {
-    ...election,
-    id: Math.random().toString(36).substr(2, 9),
-    totalVotes: 0,
-  };
-  elections = [...elections, newElection];
-  return newElection;
+  const { data, error } = await supabase
+    .from('elections')
+    .insert([{ ...election, totalVotes: 0 }])
+    .select()
+    .single();
+  
+  if (error) throw error;
+  return data;
 };
 
 const deleteElection = async (id: string): Promise<void> => {
-  elections = elections.filter((election) => election.id !== id);
+  const { error } = await supabase
+    .from('elections')
+    .delete()
+    .eq('id', id);
+  
+  if (error) throw error;
 };
 
-const addCandidate = async (electionId: string, candidate: Omit<Candidate, "id">): Promise<Candidate> => {
-  const newCandidate: Candidate = {
-    ...candidate,
-    id: Math.random().toString(36).substr(2, 9),
-  };
+const addCandidate = async ({ electionId, candidate }: { 
+  electionId: string; 
+  candidate: Omit<Candidate, "id">; 
+}): Promise<Candidate> => {
+  const { data, error } = await supabase
+    .from('candidates')
+    .insert([{ ...candidate, election_id: electionId }])
+    .select()
+    .single();
   
-  elections = elections.map((election) => {
-    if (election.id === electionId) {
-      return {
-        ...election,
-        candidates: [...(election.candidates || []), newCandidate],
-      };
-    }
-    return election;
-  });
-  
-  return newCandidate;
+  if (error) throw error;
+  return data;
 };
 
-const deleteCandidate = async (electionId: string, candidateId: string): Promise<void> => {
-  elections = elections.map((election) => {
-    if (election.id === electionId) {
-      return {
-        ...election,
-        candidates: election.candidates.filter((c) => c.id !== candidateId),
-      };
-    }
-    return election;
-  });
+const deleteCandidate = async ({ electionId, candidateId }: { 
+  electionId: string; 
+  candidateId: string; 
+}): Promise<void> => {
+  const { error } = await supabase
+    .from('candidates')
+    .delete()
+    .eq('id', candidateId)
+    .eq('election_id', electionId);
+  
+  if (error) throw error;
 };
 
 // React Query hooks
@@ -107,8 +112,7 @@ export const useAddCandidate = () => {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: ({ electionId, candidate }: { electionId: string; candidate: Omit<Candidate, "id"> }) =>
-      addCandidate(electionId, candidate),
+    mutationFn: addCandidate,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["elections"] });
     },
@@ -119,8 +123,7 @@ export const useDeleteCandidate = () => {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: ({ electionId, candidateId }: { electionId: string; candidateId: string }) =>
-      deleteCandidate(electionId, candidateId),
+    mutationFn: deleteCandidate,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["elections"] });
     },
