@@ -15,12 +15,14 @@ import * as z from "zod";
 import { useAddElection } from "@/utils/electionUtils";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useState } from "react";
 
 const electionFormSchema = z.object({
   title: z.string().min(1, "Title is required"),
   description: z.string().min(1, "Description is required"),
   startDate: z.string().min(1, "Start date is required"),
   endDate: z.string().min(1, "End date is required"),
+  image: z.any().optional(),
 });
 
 interface ElectionFormProps {
@@ -30,6 +32,7 @@ interface ElectionFormProps {
 export const ElectionForm = ({ onClose }: ElectionFormProps) => {
   const { toast } = useToast();
   const addElectionMutation = useAddElection();
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
 
   const form = useForm<z.infer<typeof electionFormSchema>>({
     resolver: zodResolver(electionFormSchema),
@@ -41,6 +44,18 @@ export const ElectionForm = ({ onClose }: ElectionFormProps) => {
     },
   });
 
+  const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+        form.setValue("image", reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const onSubmit = async (values: z.infer<typeof electionFormSchema>) => {
     try {
       await addElectionMutation.mutateAsync({
@@ -50,6 +65,7 @@ export const ElectionForm = ({ onClose }: ElectionFormProps) => {
         endDate: values.endDate,
         status: "upcoming",
         candidates: [],
+        image: values.image,
       });
       toast({
         title: "Election created",
@@ -128,6 +144,31 @@ export const ElectionForm = ({ onClose }: ElectionFormProps) => {
                 )}
               />
             </div>
+            <FormField
+              control={form.control}
+              name="image"
+              render={() => (
+                <FormItem>
+                  <FormLabel>Election Image</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageChange}
+                      className="cursor-pointer"
+                    />
+                  </FormControl>
+                  {imagePreview && (
+                    <img
+                      src={imagePreview}
+                      alt="Preview"
+                      className="mt-2 w-32 h-32 object-cover rounded-lg"
+                    />
+                  )}
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             <div className="flex justify-end gap-4">
               <Button type="button" variant="outline" onClick={onClose}>
                 Cancel

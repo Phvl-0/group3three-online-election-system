@@ -5,6 +5,7 @@ export interface Candidate {
   name: string;
   party: string;
   bio: string;
+  image?: string;
 }
 
 export interface Election {
@@ -16,6 +17,7 @@ export interface Election {
   status: "upcoming" | "active" | "ended";
   candidates: Candidate[];
   totalVotes: number;
+  image?: string;
 }
 
 // Mock database (replace with real API calls later)

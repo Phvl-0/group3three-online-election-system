@@ -14,11 +14,13 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useAddCandidate } from "@/utils/electionUtils";
 import { useToast } from "@/hooks/use-toast";
+import { useState } from "react";
 
 const candidateFormSchema = z.object({
   name: z.string().min(1, "Name is required"),
   party: z.string().min(1, "Party is required"),
   bio: z.string().min(1, "Bio is required"),
+  image: z.any().optional(),
 });
 
 interface CandidateFormProps {
@@ -29,6 +31,7 @@ interface CandidateFormProps {
 export const CandidateForm = ({ electionId, onClose }: CandidateFormProps) => {
   const { toast } = useToast();
   const addCandidateMutation = useAddCandidate();
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
 
   const form = useForm<z.infer<typeof candidateFormSchema>>({
     resolver: zodResolver(candidateFormSchema),
@@ -39,6 +42,18 @@ export const CandidateForm = ({ electionId, onClose }: CandidateFormProps) => {
     },
   });
 
+  const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+        form.setValue("image", reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const onSubmit = async (values: z.infer<typeof candidateFormSchema>) => {
     try {
       await addCandidateMutation.mutateAsync({
@@ -47,6 +62,7 @@ export const CandidateForm = ({ electionId, onClose }: CandidateFormProps) => {
           name: values.name,
           party: values.party,
           bio: values.bio,
+          image: values.image,
         },
       });
       toast({
@@ -103,6 +119,31 @@ export const CandidateForm = ({ electionId, onClose }: CandidateFormProps) => {
                 <FormControl>
                   <Textarea placeholder="Enter candidate bio" {...field} />
                 </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="image"
+            render={() => (
+              <FormItem>
+                <FormLabel>Image</FormLabel>
+                <FormControl>
+                  <Input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageChange}
+                    className="cursor-pointer"
+                  />
+                </FormControl>
+                {imagePreview && (
+                  <img
+                    src={imagePreview}
+                    alt="Preview"
+                    className="mt-2 w-32 h-32 object-cover rounded-lg"
+                  />
+                )}
                 <FormMessage />
               </FormItem>
             )}
