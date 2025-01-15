@@ -8,6 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import Layout from "@/components/Layout";
 import { motion } from "framer-motion";
 import { UserPlus } from "lucide-react";
+import { supabase } from "@/lib/supabase";
 
 const Register = () => {
   const [name, setName] = useState("");
@@ -33,18 +34,28 @@ const Register = () => {
     setIsLoading(true);
 
     try {
-      // TODO: Replace with actual API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            full_name: name,
+            role: 'voter' // Default role for new registrations
+          }
+        }
+      });
+
+      if (error) throw error;
       
       toast({
         title: "Registration successful",
-        description: "Welcome to VoteSecure! Please sign in.",
+        description: "Please check your email to verify your account.",
       });
       navigate("/login");
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: "Registration failed",
-        description: "Please try again later",
+        description: error.message || "Please try again later",
         variant: "destructive",
       });
     } finally {
