@@ -1,13 +1,13 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { User } from '@/lib/supabase';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { toast } from '@/components/ui/use-toast';
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  signIn: (email: string, password: string) => Promise<void>;
+  signIn: (email: string, password: string, redirectTo?: string) => Promise<void>;
   signOut: () => Promise<void>;
 }
 
@@ -17,6 +17,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     const initSession = async () => {
@@ -43,7 +44,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     return () => subscription.unsubscribe();
   }, []);
 
-  const signIn = async (email: string, password: string) => {
+  const signIn = async (email: string, password: string, redirectTo?: string) => {
     try {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
@@ -52,8 +53,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         title: "Login successful",
         description: email === 'group3reee@gmail.com' ? "Welcome, Admin!" : "Welcome back!",
       });
-      
-      navigate(email === 'group3reee@gmail.com' ? '/admin' : '/elections');
+
+      // Handle redirection based on user role and redirectTo parameter
+      if (email === 'group3reee@gmail.com') {
+        navigate('/admin');
+      } else {
+        navigate(redirectTo || '/elections');
+      }
     } catch (error) {
       toast({
         title: "Login failed",
