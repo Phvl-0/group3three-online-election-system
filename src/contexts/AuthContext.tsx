@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { User } from '@/lib/supabase';
 import { useNavigate } from 'react-router-dom';
+import { toast } from '@/components/ui/use-toast';
 
 interface AuthContextType {
   user: User | null;
@@ -18,25 +19,23 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Get initial session
     const initSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       setUser(session ? {
         id: session.user.id,
         email: session.user.email || '',
-        role: session.user.user_metadata.role || 'voter'
+        role: session.user.email === 'group3reee@gmail.com' ? 'admin' : 'voter'
       } : null);
       setLoading(false);
     };
 
     initSession();
 
-    // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session ? {
         id: session.user.id,
         email: session.user.email || '',
-        role: session.user.user_metadata.role || 'voter'
+        role: session.user.email === 'group3reee@gmail.com' ? 'admin' : 'voter'
       } : null);
       setLoading(false);
     });
@@ -45,8 +44,24 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) throw error;
+    try {
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+      
+      toast({
+        title: "Login successful",
+        description: email === 'group3reee@gmail.com' ? "Welcome, Admin!" : "Welcome back!",
+      });
+      
+      navigate(email === 'group3reee@gmail.com' ? '/admin' : '/elections');
+    } catch (error) {
+      toast({
+        title: "Login failed",
+        description: "Invalid email or password",
+        variant: "destructive",
+      });
+      throw error;
+    }
   };
 
   const signOut = async () => {
