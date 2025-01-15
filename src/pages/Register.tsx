@@ -8,7 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import Layout from "@/components/Layout";
 import { motion } from "framer-motion";
 import { UserPlus } from "lucide-react";
-import { supabase } from "@/lib/supabase";
+import { registerUser } from "@/utils/authUtils";
 
 const Register = () => {
   const [name, setName] = useState("");
@@ -34,30 +34,7 @@ const Register = () => {
     setIsLoading(true);
 
     try {
-      console.log('Starting registration process...');
-      console.log('Supabase URL:', import.meta.env.VITE_SUPABASE_URL);
-      
-      if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY) {
-        throw new Error('Missing Supabase configuration. Please check your environment variables.');
-      }
-
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            full_name: name,
-            role: 'voter'
-          }
-        }
-      });
-
-      console.log('Registration response:', { data, error });
-
-      if (error) {
-        console.error('Registration error:', error);
-        throw error;
-      }
+      await registerUser({ email, password, name });
       
       toast({
         title: "Registration successful",
