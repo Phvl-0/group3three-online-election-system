@@ -34,18 +34,30 @@ const Register = () => {
     setIsLoading(true);
 
     try {
+      console.log('Starting registration process...');
+      console.log('Supabase URL:', import.meta.env.VITE_SUPABASE_URL);
+      
+      if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY) {
+        throw new Error('Missing Supabase configuration. Please check your environment variables.');
+      }
+
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
           data: {
             full_name: name,
-            role: 'voter' // Default role for new registrations
+            role: 'voter'
           }
         }
       });
 
-      if (error) throw error;
+      console.log('Registration response:', { data, error });
+
+      if (error) {
+        console.error('Registration error:', error);
+        throw error;
+      }
       
       toast({
         title: "Registration successful",
@@ -53,6 +65,12 @@ const Register = () => {
       });
       navigate("/login");
     } catch (error: any) {
+      console.error('Registration error details:', {
+        error,
+        supabaseUrl: import.meta.env.VITE_SUPABASE_URL,
+        message: error.message,
+      });
+      
       toast({
         title: "Registration failed",
         description: error.message || "Please try again later",
