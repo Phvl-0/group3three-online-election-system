@@ -45,7 +45,7 @@ export const ElectionFormFields = ({ form }: ElectionFormFieldsProps) => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <FormField
           control={form.control}
-          name="startDate"
+          name="start_date"
           render={({ field }) => (
             <FormItem>
               <FormLabel>Start Date</FormLabel>
@@ -58,7 +58,7 @@ export const ElectionFormFields = ({ form }: ElectionFormFieldsProps) => {
         />
         <FormField
           control={form.control}
-          name="endDate"
+          name="end_date"
           render={({ field }) => (
             <FormItem>
               <FormLabel>End Date</FormLabel>

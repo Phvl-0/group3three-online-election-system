@@ -22,8 +22,8 @@ export const ElectionTableRow = ({ election, onDelete }: ElectionTableRowProps) 
           {election.status}
         </span>
       </td>
-      <td className="py-3 px-4">{election.startDate}</td>
-      <td className="py-3 px-4">{election.endDate}</td>
+      <td className="py-3 px-4">{election.start_date}</td>
+      <td className="py-3 px-4">{election.end_date}</td>
       <td className="py-3 px-4">
         <div className="flex items-center gap-1">
           <Users className="w-4 h-4" />
@@ -33,7 +33,7 @@ export const ElectionTableRow = ({ election, onDelete }: ElectionTableRowProps) 
       <td className="py-3 px-4">
         <div className="flex items-center gap-1">
           <Calendar className="w-4 h-4" />
-          {election.totalVotes}
+          {election.total_votes}
         </div>
       </td>
       <td className="py-3 px-4">
