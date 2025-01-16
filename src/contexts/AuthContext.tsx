@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
 import { User } from '@/lib/supabase';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { toast } from '@/components/ui/use-toast';
@@ -58,7 +58,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const signIn = async (email: string, password: string, redirectTo?: string) => {
     try {
       console.log('Attempting sign in for:', email);
-      console.log('Supabase URL:', import.meta.env.VITE_SUPABASE_URL);
       
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) {

@@ -1,4 +1,4 @@
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/use-toast";
 
 interface RegisterData {
@@ -8,17 +8,8 @@ interface RegisterData {
 }
 
 export const registerUser = async ({ email, password, name }: RegisterData) => {
-  if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY) {
-    console.error('Missing environment variables:', {
-      url: import.meta.env.VITE_SUPABASE_URL ? 'present' : 'missing',
-      key: import.meta.env.VITE_SUPABASE_ANON_KEY ? 'present' : 'missing'
-    });
-    throw new Error('Missing Supabase configuration. Please check your environment variables.');
-  }
-
   console.log('Starting registration process...');
-  console.log('Supabase URL:', import.meta.env.VITE_SUPABASE_URL);
-
+  
   try {
     const { data, error } = await supabase.auth.signUp({
       email,
@@ -44,11 +35,7 @@ export const registerUser = async ({ email, password, name }: RegisterData) => {
 
     return data;
   } catch (error: any) {
-    console.error('Registration error details:', {
-      error,
-      supabaseUrl: import.meta.env.VITE_SUPABASE_URL,
-      message: error.message
-    });
+    console.error('Registration error details:', error);
     throw error;
   }
 };
