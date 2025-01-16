@@ -1,5 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "sonner";
 
 interface RegisterData {
   email: string;
@@ -18,7 +18,8 @@ export const registerUser = async ({ email, password, name }: RegisterData) => {
         data: {
           full_name: name,
           role: 'voter'
-        }
+        },
+        emailRedirectTo: `${window.location.origin}/login`
       }
     });
 
@@ -36,6 +37,7 @@ export const registerUser = async ({ email, password, name }: RegisterData) => {
     return data;
   } catch (error: any) {
     console.error('Registration error details:', error);
+    toast.error(error.message || 'Registration failed');
     throw error;
   }
 };
