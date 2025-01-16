@@ -1,25 +1,11 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { Database } from "@/integrations/supabase/types";
 
-export interface Candidate {
-  id: string;
-  name: string;
-  party: string;
-  bio: string;
-  image?: string;
-}
-
-export interface Election {
-  id: string;
-  title: string;
-  description: string;
-  startDate: string;
-  endDate: string;
-  status: "upcoming" | "active" | "ended";
+export type Candidate = Database['public']['Tables']['candidates']['Row'];
+export type Election = Database['public']['Tables']['elections']['Row'] & {
   candidates: Candidate[];
-  totalVotes: number;
-  image?: string;
-}
+};
 
 // API functions
 const fetchElections = async (): Promise<Election[]> => {
@@ -31,10 +17,10 @@ const fetchElections = async (): Promise<Election[]> => {
   return data || [];
 };
 
-const addElection = async (election: Omit<Election, "id" | "totalVotes">): Promise<Election> => {
+const addElection = async (election: Omit<Database['public']['Tables']['elections']['Insert'], 'id' | 'total_votes'>): Promise<Election> => {
   const { data, error } = await supabase
     .from('elections')
-    .insert([{ ...election, totalVotes: 0 }])
+    .insert([{ ...election, total_votes: 0 }])
     .select()
     .single();
   
@@ -53,7 +39,7 @@ const deleteElection = async (id: string): Promise<void> => {
 
 const addCandidate = async ({ electionId, candidate }: { 
   electionId: string; 
-  candidate: Omit<Candidate, "id">; 
+  candidate: Omit<Database['public']['Tables']['candidates']['Insert'], 'id' | 'election_id'>; 
 }): Promise<Candidate> => {
   const { data, error } = await supabase
     .from('candidates')
