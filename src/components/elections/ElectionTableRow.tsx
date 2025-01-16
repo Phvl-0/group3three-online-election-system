@@ -1,7 +1,7 @@
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { TableCell, TableRow } from "@/components/ui/table";
-import { Election } from "@/types/elections";
+import { Election } from "@/utils/electionUtils";
 import { Link } from "react-router-dom";
 
 interface ElectionTableRowProps {

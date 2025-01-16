@@ -4,7 +4,7 @@ import Layout from "@/components/Layout";
 import { Plus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useElections, useDeleteElection } from "@/utils/electionUtils";
-import { ElectionForm } from "@/components/elections/ElectionForm";
+import ElectionForm from "@/components/elections/ElectionForm";
 import { ElectionTable } from "@/components/elections/ElectionTable";
 
 const AdminDashboard = () => {
@@ -43,11 +43,11 @@ const AdminDashboard = () => {
 
         {isCreating && (
           <div className="mb-8">
-            <ElectionForm onClose={() => setIsCreating(false)} />
+            <ElectionForm />
           </div>
         )}
 
-        <ElectionTable elections={elections} onDelete={handleDelete} />
+        {!isLoading && <ElectionTable elections={elections} onDelete={handleDelete} />}
       </div>
     </Layout>
   );

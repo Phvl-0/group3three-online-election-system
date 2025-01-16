@@ -103,7 +103,7 @@ const ElectionForm = () => {
           </div>
           <div className="space-y-2">
             <Label>Election Image</Label>
-            <ImageUpload onUpload={handleImageUpload} />
+            <ImageUpload onChange={handleImageUpload} />
           </div>
         </CardContent>
         <CardFooter>
