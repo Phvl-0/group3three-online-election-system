@@ -1,85 +1,117 @@
-import { Button } from "@/components/ui/button";
-import { Form } from "@/components/ui/form";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
-import { useAddElection } from "@/utils/electionUtils";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ElectionFormFields } from "./ElectionFormFields";
-import { ImageUpload } from "../shared/ImageUpload";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { ImageUpload } from "@/components/shared/ImageUpload";
+import { supabase } from "@/integrations/supabase/client";
 
-const electionFormSchema = z.object({
-  title: z.string().min(1, "Title is required"),
-  description: z.string().min(1, "Description is required"),
-  start_date: z.string().min(1, "Start date is required"),
-  end_date: z.string().min(1, "End date is required"),
-  image: z.any().optional(),
-});
-
-interface ElectionFormProps {
-  onClose: () => void;
+interface ElectionFormData {
+  title: string;
+  description: string;
+  start_date: string;
+  end_date: string;
+  status: "upcoming" | "active" | "ended";
+  image?: string;
 }
 
-export const ElectionForm = ({ onClose }: ElectionFormProps) => {
+const ElectionForm = () => {
+  const navigate = useNavigate();
   const { toast } = useToast();
-  const addElectionMutation = useAddElection();
-
-  const form = useForm<z.infer<typeof electionFormSchema>>({
-    resolver: zodResolver(electionFormSchema),
-    defaultValues: {
-      title: "",
-      description: "",
-      start_date: "",
-      end_date: "",
-    },
+  const [formData, setFormData] = useState<ElectionFormData>({
+    title: "",
+    description: "",
+    start_date: "",
+    end_date: "",
+    status: "upcoming",
   });
 
-  const onSubmit = async (values: z.infer<typeof electionFormSchema>) => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
     try {
-      await addElectionMutation.mutateAsync({
-        title: values.title,
-        description: values.description,
-        start_date: values.start_date,
-        end_date: values.end_date,
-        status: "upcoming",
-        candidates: [],
-        image: values.image,
-      });
+      const { error } = await supabase.from("elections").insert([formData]);
+
+      if (error) throw error;
+
       toast({
-        title: "Election created",
-        description: "The election has been successfully created",
+        title: "Success",
+        description: "Election created successfully",
       });
-      onClose();
-      form.reset();
-    } catch (error) {
+
+      navigate("/elections");
+    } catch (error: any) {
       toast({
         title: "Error",
-        description: "Failed to create the election",
+        description: error.message,
         variant: "destructive",
       });
     }
   };
 
+  const handleImageUpload = (url: string) => {
+    setFormData((prev) => ({ ...prev, image: url }));
+  };
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Create New Election</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <ElectionFormFields form={form} />
-            <ImageUpload form={form} name="image" label="Election Image" />
-            <div className="flex justify-end gap-4">
-              <Button type="button" variant="outline" onClick={onClose}>
-                Cancel
-              </Button>
-              <Button type="submit">Create Election</Button>
-            </div>
-          </form>
-        </Form>
-      </CardContent>
-    </Card>
+    <form onSubmit={handleSubmit}>
+      <Card>
+        <CardHeader>
+          <CardTitle>Create New Election</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="title">Title</Label>
+            <Input
+              id="title"
+              value={formData.title}
+              onChange={(e) => setFormData((prev) => ({ ...prev, title: e.target.value }))}
+              required
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="description">Description</Label>
+            <Textarea
+              id="description"
+              value={formData.description}
+              onChange={(e) => setFormData((prev) => ({ ...prev, description: e.target.value }))}
+              required
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="start_date">Start Date</Label>
+            <Input
+              id="start_date"
+              type="datetime-local"
+              value={formData.start_date}
+              onChange={(e) => setFormData((prev) => ({ ...prev, start_date: e.target.value }))}
+              required
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="end_date">End Date</Label>
+            <Input
+              id="end_date"
+              type="datetime-local"
+              value={formData.end_date}
+              onChange={(e) => setFormData((prev) => ({ ...prev, end_date: e.target.value }))}
+              required
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>Election Image</Label>
+            <ImageUpload onUpload={handleImageUpload} />
+          </div>
+        </CardContent>
+        <CardFooter>
+          <Button type="submit">Create Election</Button>
+        </CardFooter>
+      </Card>
+    </form>
   );
 };
+
+export default ElectionForm;
