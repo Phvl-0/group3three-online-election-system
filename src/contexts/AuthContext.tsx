@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { User } from '@/lib/supabase';
+import { User } from '@/types/auth';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { toast } from '@/components/ui/use-toast';
 
@@ -70,7 +70,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         description: email === 'group3reee@gmail.com' ? "Welcome, Admin!" : "Welcome back!",
       });
 
-      // Handle redirection based on user role and redirectTo parameter
       if (email === 'group3reee@gmail.com') {
         navigate('/admin');
       } else {
