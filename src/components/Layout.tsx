@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Home, Vote, Settings, LogOut, Menu, X } from "lucide-react";
+import { Home, Vote, Settings, Menu } from "lucide-react";
 import {
   Sheet,
   SheetContent,
@@ -49,10 +49,6 @@ const Layout = ({ children }: LayoutProps) => {
           Admin
         </Button>
       </Link>
-      <Button variant="ghost" className="text-white hover:text-white w-full justify-start">
-        <LogOut className="mr-2 h-4 w-4" />
-        Logout
-      </Button>
     </>
   );
 
