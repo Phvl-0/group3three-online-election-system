@@ -8,6 +8,7 @@ import Index from "./pages/Index";
 import Elections from "./pages/Elections";
 import ElectionDetails from "./pages/ElectionDetails";
 import AdminDashboard from "./pages/AdminDashboard";
+import Register from "./pages/Register";
 
 const queryClient = new QueryClient();
 
@@ -21,6 +22,7 @@ const App = () => (
             <Route path="/elections" element={<Elections />} />
             <Route path="/elections/:id" element={<ElectionDetails />} />
             <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="/register" element={<Register />} />
           </Routes>
           <Toaster />
           <Sonner />
