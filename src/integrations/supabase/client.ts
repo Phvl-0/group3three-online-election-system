@@ -10,7 +10,6 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     detectSessionInUrl: true,
     flowType: 'pkce',
     storage: window.localStorage,
-    storageKey: 'supabase.auth.token',
-    redirectTo: window.location.origin
+    storageKey: 'supabase.auth.token'
   }
 });
