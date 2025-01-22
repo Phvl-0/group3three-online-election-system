@@ -4,7 +4,7 @@ import { Database } from "@/integrations/supabase/types";
 
 export type Candidate = Database['public']['Tables']['candidates']['Row'];
 export type Election = Database['public']['Tables']['elections']['Row'] & {
-  candidates: Candidate[];
+  candidates?: Candidate[];
 };
 
 // API functions
@@ -14,7 +14,12 @@ const fetchElections = async (): Promise<Election[]> => {
     .select('*, candidates(*)');
   
   if (error) throw error;
-  return data || [];
+  
+  // Transform the data to ensure candidates is always an array
+  return (data || []).map(election => ({
+    ...election,
+    candidates: election.candidates || []
+  }));
 };
 
 const addElection = async (election: Omit<Database['public']['Tables']['elections']['Insert'], 'id' | 'total_votes'>): Promise<Election> => {
@@ -25,7 +30,7 @@ const addElection = async (election: Omit<Database['public']['Tables']['election
     .single();
   
   if (error) throw error;
-  return data;
+  return { ...data, candidates: [] };
 };
 
 const deleteElection = async (id: string): Promise<void> => {
