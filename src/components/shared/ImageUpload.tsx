@@ -1,13 +1,16 @@
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { UseFormReturn } from "react-hook-form";
 
 interface ImageUploadProps {
-  onChange: (url: string) => void;
+  onChange?: (url: string) => void;
   label?: string;
+  form?: UseFormReturn<any>;
+  name?: string;
 }
 
-export const ImageUpload = ({ onChange, label = "Upload Image" }: ImageUploadProps) => {
+export const ImageUpload = ({ onChange, label = "Upload Image", form, name }: ImageUploadProps) => {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
 
   const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -17,7 +20,10 @@ export const ImageUpload = ({ onChange, label = "Upload Image" }: ImageUploadPro
       reader.onloadend = () => {
         const result = reader.result as string;
         setImagePreview(result);
-        onChange(result);
+        if (onChange) onChange(result);
+        if (form && name) {
+          form.setValue(name, result);
+        }
       };
       reader.readAsDataURL(file);
     }

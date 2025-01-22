@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ImageUpload } from "@/components/shared/ImageUpload";
-import { supabase } from "@/integrations/supabase/client";
+import { useAddElection } from "@/utils/electionUtils";
 
 interface ElectionFormData {
   title: string;
@@ -21,6 +21,7 @@ interface ElectionFormData {
 const ElectionForm = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const addElectionMutation = useAddElection();
   const [formData, setFormData] = useState<ElectionFormData>({
     title: "",
     description: "",
@@ -33,9 +34,7 @@ const ElectionForm = () => {
     e.preventDefault();
 
     try {
-      const { error } = await supabase.from("elections").insert([formData]);
-
-      if (error) throw error;
+      await addElectionMutation.mutateAsync(formData);
 
       toast({
         title: "Success",
