@@ -1,4 +1,5 @@
-import { useState } from "react";
+
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,29 +16,68 @@ const Register = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
+  // Check if user is already logged in
+  useEffect(() => {
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        navigate("/");
+      }
+    };
+    
+    checkSession();
+
+    // Setup auth state listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN') {
+        navigate("/");
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [navigate]);
+
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
+        options: {
+          emailRedirectTo: window.location.origin
+        }
       });
 
-      if (error) throw error;
+      if (error) {
+        throw error;
+      }
 
-      toast({
-        title: "Registration successful!",
-        description: "Please check your email to verify your account.",
-      });
-      
-      // Redirect to login page after successful registration
-      navigate("/login");
+      if (data.user) {
+        toast({
+          title: "Registration successful!",
+          description: "Please check your email to verify your account.",
+        });
+        
+        // Redirect to login page after successful registration
+        navigate("/login");
+      }
     } catch (error: any) {
+      let errorMessage = "Registration failed";
+      
+      // Handle specific error cases
+      if (error.message.includes("email")) {
+        errorMessage = "Invalid email format";
+      } else if (error.message.includes("password")) {
+        errorMessage = "Password must be at least 6 characters";
+      } else if (error.message.includes("already")) {
+        errorMessage = "This email is already registered";
+      }
+      
       toast({
-        title: "Registration failed",
-        description: error.message,
+        title: "Error",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
