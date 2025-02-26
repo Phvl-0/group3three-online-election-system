@@ -42,23 +42,24 @@ const Register = () => {
     setLoading(true);
 
     try {
-      console.log('Attempting registration with:', { email });
+      console.log('Starting registration process for:', email);
       
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback`
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
         }
       });
 
       console.log('Registration response:', { data, error });
 
       if (error) {
+        console.error('Supabase error:', error);
         throw error;
       }
 
-      if (data.user) {
+      if (data?.user) {
         toast({
           title: "Registration successful!",
           description: "Please check your email to verify your account.",
@@ -66,6 +67,8 @@ const Register = () => {
         
         // Wait a moment before redirecting
         setTimeout(() => navigate("/login"), 2000);
+      } else {
+        throw new Error('Registration failed - no user data returned');
       }
     } catch (error: any) {
       console.error('Registration error:', error);
