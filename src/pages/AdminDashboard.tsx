@@ -1,4 +1,5 @@
-import { useState } from "react";
+
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import Layout from "@/components/Layout";
 import { Plus } from "lucide-react";
@@ -6,13 +7,49 @@ import { useToast } from "@/hooks/use-toast";
 import { useElections, useDeleteElection } from "@/utils/electionUtils";
 import ElectionForm from "@/components/elections/ElectionForm";
 import { ElectionTable } from "@/components/elections/ElectionTable";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 
 const AdminDashboard = () => {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [isCreating, setIsCreating] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   
-  const { data: elections = [], isLoading } = useElections();
+  const { data: elections = [], isLoading: electionsLoading } = useElections();
   const deleteElectionMutation = useDeleteElection();
+
+  useEffect(() => {
+    const checkAdminRole = async () => {
+      try {
+        const { data, error } = await supabase.rpc('has_role', {
+          '_role': 'admin'
+        });
+
+        if (error) throw error;
+
+        if (!data) {
+          toast({
+            title: "Access Denied",
+            description: "You don't have permission to access this page",
+            variant: "destructive",
+          });
+          navigate("/");
+          return;
+        }
+
+        setIsAdmin(true);
+      } catch (error) {
+        console.error('Error checking admin role:', error);
+        navigate("/");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    checkAdminRole();
+  }, [navigate, toast]);
 
   const handleDelete = async (id: string) => {
     try {
@@ -29,6 +66,20 @@ const AdminDashboard = () => {
       });
     }
   };
+
+  if (isLoading) {
+    return (
+      <Layout>
+        <div className="container mx-auto py-8">
+          <div className="text-center">Loading...</div>
+        </div>
+      </Layout>
+    );
+  }
+
+  if (!isAdmin) {
+    return null;
+  }
 
   return (
     <Layout>
@@ -47,7 +98,7 @@ const AdminDashboard = () => {
           </div>
         )}
 
-        {!isLoading && <ElectionTable elections={elections} onDelete={handleDelete} />}
+        {!electionsLoading && <ElectionTable elections={elections} onDelete={handleDelete} />}
       </div>
     </Layout>
   );
