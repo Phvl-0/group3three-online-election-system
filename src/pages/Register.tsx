@@ -42,13 +42,17 @@ const Register = () => {
     setLoading(true);
 
     try {
+      console.log('Attempting registration with:', { email });
+      
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          emailRedirectTo: window.location.origin
+          emailRedirectTo: `${window.location.origin}/auth/callback`
         }
       });
+
+      console.log('Registration response:', { data, error });
 
       if (error) {
         throw error;
@@ -60,10 +64,12 @@ const Register = () => {
           description: "Please check your email to verify your account.",
         });
         
-        // Redirect to login page after successful registration
-        navigate("/login");
+        // Wait a moment before redirecting
+        setTimeout(() => navigate("/login"), 2000);
       }
     } catch (error: any) {
+      console.error('Registration error:', error);
+      
       let errorMessage = "Registration failed";
       
       // Handle specific error cases
