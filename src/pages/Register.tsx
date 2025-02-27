@@ -21,6 +21,7 @@ const Register = () => {
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
+        console.log('User already has an active session, redirecting to home');
         navigate("/");
       }
     };
@@ -78,6 +79,10 @@ const Register = () => {
       
       if (error.message.includes("already registered")) {
         errorMessage = "This email is already registered";
+      } else if (error.message.includes("password")) {
+        errorMessage = "Password must be at least 6 characters";
+      } else if (error.message.includes("valid email")) {
+        errorMessage = "Please enter a valid email address";
       }
       
       toast({
