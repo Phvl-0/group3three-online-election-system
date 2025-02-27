@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { TableCell, TableRow } from "@/components/ui/table";
 import { Election } from "@/utils/electionUtils";
 import { Link } from "react-router-dom";
-import { Chart, Users, Timer } from "lucide-react";
+import { BarChart, Users, Timer } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface ElectionTableRowProps {
@@ -47,7 +47,7 @@ const ElectionTableRow = ({ election, onDelete }: ElectionTableRowProps) => {
             />
           ) : (
             <div className="w-12 h-12 bg-muted rounded flex items-center justify-center">
-              <Chart className="w-6 h-6 text-muted-foreground" />
+              <BarChart className="w-6 h-6 text-muted-foreground" />
             </div>
           )}
           <div>
