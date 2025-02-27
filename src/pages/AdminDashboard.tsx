@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import Layout from "@/components/Layout";
-import { Plus } from "lucide-react";
+import { Plus, AlertTriangle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useElections, useDeleteElection } from "@/utils/electionUtils";
 import ElectionForm from "@/components/elections/ElectionForm";
@@ -16,9 +16,39 @@ const AdminDashboard = () => {
   const [isCreating, setIsCreating] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [sessionActive, setSessionActive] = useState(true);
   
   const { data: elections = [], isLoading: electionsLoading } = useElections();
   const deleteElectionMutation = useDeleteElection();
+
+  // Check session activity every minute
+  useEffect(() => {
+    const checkSession = async () => {
+      try {
+        const { data, error } = await supabase.rpc('is_session_active');
+        if (error) throw error;
+        
+        if (!data) {
+          toast({
+            title: "Session Expired",
+            description: "Your admin session has expired. Please log in again.",
+            variant: "destructive",
+          });
+          await supabase.auth.signOut();
+          navigate("/login");
+          return;
+        }
+        setSessionActive(true);
+      } catch (error) {
+        console.error('Error checking session:', error);
+      }
+    };
+
+    const interval = setInterval(checkSession, 60000); // Check every minute
+    checkSession(); // Initial check
+
+    return () => clearInterval(interval);
+  }, [navigate, toast]);
 
   useEffect(() => {
     const checkAdminRole = async () => {
@@ -39,6 +69,12 @@ const AdminDashboard = () => {
           return;
         }
 
+        // Log admin access
+        await supabase.rpc('log_admin_action', {
+          action: 'admin_dashboard_access',
+          details: JSON.stringify({ timestamp: new Date().toISOString() })
+        });
+
         setIsAdmin(true);
       } catch (error) {
         console.error('Error checking admin role:', error);
@@ -54,6 +90,13 @@ const AdminDashboard = () => {
   const handleDelete = async (id: string) => {
     try {
       await deleteElectionMutation.mutateAsync(id);
+      
+      // Log deletion action
+      await supabase.rpc('log_admin_action', {
+        action: 'delete_election',
+        details: JSON.stringify({ election_id: id })
+      });
+      
       toast({
         title: "Election deleted",
         description: "The election has been successfully deleted",
@@ -77,7 +120,7 @@ const AdminDashboard = () => {
     );
   }
 
-  if (!isAdmin) {
+  if (!isAdmin || !sessionActive) {
     return null;
   }
 
@@ -91,6 +134,21 @@ const AdminDashboard = () => {
             Create Election
           </Button>
         </div>
+
+        {!sessionActive && (
+          <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4">
+            <div className="flex">
+              <div className="flex-shrink-0">
+                <AlertTriangle className="h-5 w-5 text-yellow-400" />
+              </div>
+              <div className="ml-3">
+                <p className="text-sm text-yellow-700">
+                  Your session has been inactive for a while. You may need to refresh or login again.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {isCreating && (
           <div className="mb-8">

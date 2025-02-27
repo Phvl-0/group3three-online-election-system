@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ImageUpload } from "@/components/shared/ImageUpload";
 import { useAddElection } from "@/utils/electionUtils";
+import { supabase } from "@/utils/supabase";
 
 interface ElectionFormData {
   title: string;
@@ -34,7 +35,18 @@ const ElectionForm = () => {
     e.preventDefault();
 
     try {
-      await addElectionMutation.mutateAsync(formData);
+      const election = await addElectionMutation.mutateAsync(formData);
+
+      // Log election creation
+      await supabase.rpc('log_admin_action', {
+        action: 'create_election',
+        details: JSON.stringify({
+          election_id: election.id,
+          title: election.title,
+          start_date: election.start_date,
+          end_date: election.end_date
+        })
+      });
 
       toast({
         title: "Success",
