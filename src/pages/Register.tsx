@@ -21,8 +21,9 @@ const Register = () => {
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        console.log('User already has an active session, redirecting to home');
-        navigate("/");
+        // Sign out the user first
+        await supabase.auth.signOut();
+        console.log('Signed out existing session');
       }
     };
     
@@ -31,7 +32,7 @@ const Register = () => {
     // Setup auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       console.log('Auth state changed:', event, session);
-      if (session) {
+      if (event === 'SIGNED_IN' && session) {
         navigate("/");
       }
     });
