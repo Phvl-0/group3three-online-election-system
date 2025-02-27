@@ -29,7 +29,8 @@ const Register = () => {
 
     // Setup auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'SIGNED_IN') {
+      console.log('Auth state changed:', event, session);
+      if (session) {
         navigate("/");
       }
     });
@@ -49,7 +50,7 @@ const Register = () => {
         password,
         options: {
           emailRedirectTo: `${window.location.origin}/auth/callback`,
-        }
+        },
       });
 
       console.log('Registration response:', { data, error });
@@ -65,7 +66,7 @@ const Register = () => {
           description: "Please check your email to verify your account.",
         });
         
-        // Wait a moment before redirecting
+        // Wait a moment before redirecting to login
         setTimeout(() => navigate("/login"), 2000);
       } else {
         throw new Error('Registration failed - no user data returned');
@@ -75,12 +76,7 @@ const Register = () => {
       
       let errorMessage = "Registration failed";
       
-      // Handle specific error cases
-      if (error.message.includes("email")) {
-        errorMessage = "Invalid email format";
-      } else if (error.message.includes("password")) {
-        errorMessage = "Password must be at least 6 characters";
-      } else if (error.message.includes("already")) {
+      if (error.message.includes("already registered")) {
         errorMessage = "This email is already registered";
       }
       
