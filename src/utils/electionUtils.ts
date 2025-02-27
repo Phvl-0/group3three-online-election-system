@@ -1,4 +1,6 @@
+
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 export interface Candidate {
   id: string;
@@ -25,48 +27,105 @@ export interface Election {
   candidates?: Candidate[];
 }
 
-// Mock API functions for now
 const fetchElections = async (): Promise<Election[]> => {
-  return [];
+  const { data, error } = await supabase
+    .from('elections')
+    .select(`
+      *,
+      candidates (*)
+    `)
+    .order('created_at', { ascending: false });
+
+  if (error) throw error;
+  return data || [];
 };
 
 const addElection = async (election: Omit<Election, 'id' | 'total_votes' | 'created_at' | 'updated_at'>): Promise<Election> => {
-  return {
-    id: String(Date.now()),
-    ...election,
-    total_votes: 0,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-    candidates: []
-  };
+  const { data, error } = await supabase
+    .from('elections')
+    .insert([
+      {
+        ...election,
+        total_votes: 0
+      }
+    ])
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
 };
 
 const deleteElection = async (id: string): Promise<void> => {
-  // Mock delete
+  const { error } = await supabase
+    .from('elections')
+    .delete()
+    .eq('id', id);
+
+  if (error) throw error;
 };
 
-const addCandidate = async ({ electionId, candidate }: { 
+const addCandidate = async ({ 
+  electionId, 
+  candidate 
+}: { 
   electionId: string; 
   candidate: Omit<Candidate, 'id' | 'election_id' | 'created_at' | 'updated_at'>; 
 }): Promise<Candidate> => {
-  return {
-    id: String(Date.now()),
-    election_id: electionId,
-    ...candidate,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString()
-  };
+  const { data, error } = await supabase
+    .from('candidates')
+    .insert([
+      {
+        ...candidate,
+        election_id: electionId
+      }
+    ])
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
 };
 
-const deleteCandidate = async ({ electionId, candidateId }: { 
+const deleteCandidate = async ({ 
+  electionId, 
+  candidateId 
+}: { 
   electionId: string; 
   candidateId: string; 
 }): Promise<void> => {
-  // Mock delete
+  const { error } = await supabase
+    .from('candidates')
+    .delete()
+    .eq('id', candidateId)
+    .eq('election_id', electionId);
+
+  if (error) throw error;
 };
 
-// React Query hooks
 export const useElections = () => {
+  const queryClient = useQueryClient();
+
+  React.useEffect(() => {
+    const channel = supabase
+      .channel('election-changes')
+      .on('postgres_changes', 
+        { 
+          event: '*', 
+          schema: 'public', 
+          table: 'elections' 
+        }, 
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['elections'] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient]);
+
   return useQuery({
     queryKey: ["elections"],
     queryFn: fetchElections,

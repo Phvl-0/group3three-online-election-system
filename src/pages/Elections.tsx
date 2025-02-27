@@ -1,70 +1,33 @@
+
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Search, Calendar, Users, ArrowUpDown } from "lucide-react";
+import { Search, Calendar, Users, ArrowUpDown, TrendingUp, FileBarChart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import Layout from "@/components/Layout";
-import { useToast } from "@/hooks/use-toast";
-
-interface Election {
-  id: string;
-  title: string;
-  description: string;
-  startDate: string;
-  endDate: string;
-  participants: number;
-  status: "upcoming" | "active" | "ended";
-}
-
-// Mock data - replace with actual API call later
-const mockElections: Election[] = [
-  {
-    id: "1",
-    title: "Student Council Election 2024",
-    description: "Annual election for student council representatives",
-    startDate: "2024-03-01",
-    endDate: "2024-03-07",
-    participants: 450,
-    status: "upcoming"
-  },
-  {
-    id: "2",
-    title: "City Mayor Election",
-    description: "Municipal election for city mayor position",
-    startDate: "2024-02-15",
-    endDate: "2024-02-15",
-    participants: 12500,
-    status: "active"
-  },
-  {
-    id: "3",
-    title: "Community Board Election",
-    description: "Selection of new community board members",
-    startDate: "2024-01-10",
-    endDate: "2024-01-15",
-    participants: 890,
-    status: "ended"
-  }
-];
-
-const fetchElections = async () => {
-  // Simulate API call
-  await new Promise(resolve => setTimeout(resolve, 1000));
-  return mockElections;
-};
+import { ElectionTable } from "@/components/elections/ElectionTable";
+import { useElections } from "@/utils/electionUtils";
+import { format } from "date-fns";
 
 const Elections = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState<"date" | "participants">("date");
-  const { toast } = useToast();
+  const { data: elections = [], isLoading } = useElections();
 
-  const { data: elections = [], isLoading } = useQuery({
-    queryKey: ["elections"],
-    queryFn: fetchElections,
-  });
+  const activeElections = elections.filter(election => 
+    new Date(election.start_date) <= new Date() && 
+    new Date(election.end_date) >= new Date()
+  );
+
+  const upcomingElections = elections.filter(election => 
+    new Date(election.start_date) > new Date()
+  );
+
+  const totalVotes = elections.reduce((sum, election) => sum + (election.total_votes || 0), 0);
+  const participationRate = activeElections.length > 0 ? 
+    Math.round((totalVotes / activeElections.length) * 100) : 0;
 
   const filteredElections = elections
     .filter(election => 
@@ -73,21 +36,10 @@ const Elections = () => {
     )
     .sort((a, b) => {
       if (sortBy === "date") {
-        return new Date(b.startDate).getTime() - new Date(a.startDate).getTime();
+        return new Date(b.start_date).getTime() - new Date(a.start_date).getTime();
       }
-      return b.participants - a.participants;
+      return (b.total_votes || 0) - (a.total_votes || 0);
     });
-
-  const getStatusColor = (status: Election["status"]) => {
-    switch (status) {
-      case "upcoming":
-        return "bg-blue-100 text-blue-800";
-      case "active":
-        return "bg-green-100 text-green-800";
-      case "ended":
-        return "bg-gray-100 text-gray-800";
-    }
-  };
 
   return (
     <Layout>
@@ -97,11 +49,99 @@ const Elections = () => {
           animate={{ opacity: 1, y: 0 }}
           className="flex flex-col gap-4"
         >
-          <h1 className="text-4xl font-bold">Elections</h1>
-          <p className="text-muted-foreground">
-            Browse and participate in active elections or view upcoming ones.
-          </p>
+          <div className="flex justify-between items-center">
+            <div>
+              <h1 className="text-4xl font-bold">Elections Dashboard</h1>
+              <p className="text-muted-foreground mt-2">
+                Browse and participate in active elections or view upcoming ones.
+              </p>
+            </div>
+          </div>
         </motion.div>
+
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Active Elections</CardTitle>
+              <Calendar className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{activeElections.length}</div>
+              <p className="text-xs text-muted-foreground">
+                {activeElections.length === 1 ? 'election' : 'elections'} currently active
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Votes Cast</CardTitle>
+              <Users className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{totalVotes.toLocaleString()}</div>
+              <p className="text-xs text-muted-foreground">
+                across all elections
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Average Participation</CardTitle>
+              <TrendingUp className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{participationRate}%</div>
+              <p className="text-xs text-muted-foreground">
+                voter participation rate
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Upcoming Elections</CardTitle>
+              <FileBarChart className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{upcomingElections.length}</div>
+              <p className="text-xs text-muted-foreground">
+                scheduled for the future
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {activeElections.length > 0 && (
+          <Card className="border-green-200 bg-green-50/50">
+            <CardHeader>
+              <CardTitle>Active Elections</CardTitle>
+              <CardDescription>
+                Elections currently open for voting
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {activeElections.map(election => (
+                  <Link key={election.id} to={`/elections/${election.id}`}>
+                    <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+                      <CardHeader>
+                        <CardTitle className="text-lg">{election.title}</CardTitle>
+                        <CardDescription>
+                          Ends {format(new Date(election.end_date), "PPP")}
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <Button className="w-full">Vote Now</Button>
+                      </CardContent>
+                    </Card>
+                  </Link>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="relative flex-1">
@@ -123,7 +163,7 @@ const Elections = () => {
         </div>
 
         {isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="space-y-4">
             {[1, 2, 3].map((n) => (
               <Card key={n} className="animate-pulse">
                 <CardHeader className="space-y-2">
@@ -138,39 +178,10 @@ const Elections = () => {
             ))}
           </div>
         ) : (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-          >
-            {filteredElections.map((election) => (
-              <Link to={`/elections/${election.id}`} key={election.id}>
-                <Card className="hover:shadow-lg transition-shadow cursor-pointer h-full">
-                  <CardHeader>
-                    <div className="flex justify-between items-start">
-                      <CardTitle className="text-xl">{election.title}</CardTitle>
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(election.status)}`}>
-                        {election.status}
-                      </span>
-                    </div>
-                    <CardDescription>{election.description}</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                      <div className="flex items-center gap-1">
-                        <Calendar className="h-4 w-4" />
-                        <span>{new Date(election.startDate).toLocaleDateString()}</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Users className="h-4 w-4" />
-                        <span>{election.participants.toLocaleString()} participants</span>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </Link>
-            ))}
-          </motion.div>
+          <ElectionTable
+            elections={filteredElections}
+            onDelete={undefined}  // Only show delete for admin role
+          />
         )}
 
         {!isLoading && filteredElections.length === 0 && (
