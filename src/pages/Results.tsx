@@ -1,18 +1,31 @@
 
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import Layout from "@/components/Layout";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+
+interface VoteResult {
+  candidateId: string;
+  candidateName: string;
+  party: string;
+  voteCount: number;
+}
+
+interface ElectionResult {
+  id: string;
+  title: string;
+  endDate: string;
+  results: VoteResult[];
+}
 
 const Results = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [loading, setLoading] = useState(true);
-  const [electionResults, setElectionResults] = useState<any[]>([]);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -25,30 +38,49 @@ const Results = () => {
           variant: "destructive",
         });
         navigate("/login");
-        return;
       }
-      
-      setIsLoggedIn(true);
-      fetchResults();
     };
 
     checkAuth();
   }, [navigate, toast]);
 
-  const fetchResults = async () => {
-    try {
-      setLoading(true);
-      
-      // Fetch completed elections
-      const { data: elections, error: electionsError } = await supabase
-        .from('elections')
-        .select('*')
-        .eq('status', 'ended');
+  // Set up real-time subscription to vote changes
+  useEffect(() => {
+    const channel = supabase
+      .channel('election-results-changes')
+      .on('postgres_changes', 
+        { 
+          event: '*', 
+          schema: 'public', 
+          table: 'votes' 
+        }, 
+        () => {
+          // Invalidate the query to refetch data when votes change
+          queryClient.invalidateQueries({ queryKey: ['electionResults'] });
+        }
+      )
+      .subscribe();
 
-      if (electionsError) throw electionsError;
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient]);
 
-      // For each election, fetch results
-      const resultsPromises = elections.map(async (election) => {
+  const fetchResults = async (): Promise<ElectionResult[]> => {
+    // Fetch completed elections
+    const { data: elections, error: electionsError } = await supabase
+      .from('elections')
+      .select('*')
+      .eq('status', 'ended');
+
+    if (electionsError) throw electionsError;
+
+    if (!elections.length) return [];
+
+    // For each election, fetch results
+    const results = await Promise.all(
+      elections.map(async (election) => {
+        // Get all votes for this election
         const { data: votes, error: votesError } = await supabase
           .from('votes')
           .select('candidate_id')
@@ -57,9 +89,9 @@ const Results = () => {
         if (votesError) throw votesError;
 
         // Count votes per candidate
-        const voteCounts: Record<string, number> = {};
+        const voteCount: Record<string, number> = {};
         votes.forEach(vote => {
-          voteCounts[vote.candidate_id] = (voteCounts[vote.candidate_id] || 0) + 1;
+          voteCount[vote.candidate_id] = (voteCount[vote.candidate_id] || 0) + 1;
         });
 
         // Get candidate details
@@ -70,43 +102,46 @@ const Results = () => {
 
         if (candidatesError) throw candidatesError;
 
-        // Format data for chart
-        const chartData = candidates.map(candidate => ({
-          name: candidate.name,
-          votes: voteCounts[candidate.id] || 0,
+        // Format results
+        const candidateResults: VoteResult[] = candidates.map(candidate => ({
+          candidateId: candidate.id,
+          candidateName: candidate.name,
+          party: candidate.party,
+          voteCount: voteCount[candidate.id] || 0,
         }));
 
         return {
           id: election.id,
           title: election.title,
-          end_date: election.end_date,
-          data: chartData,
+          endDate: election.end_date,
+          results: candidateResults,
         };
-      });
+      })
+    );
 
-      const results = await Promise.all(resultsPromises);
-      setElectionResults(results);
-    } catch (error) {
-      console.error('Error fetching results:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load election results",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
+    return results;
   };
 
-  if (!isLoggedIn) {
-    return null;
+  const { data: electionResults = [], isLoading, error } = useQuery({
+    queryKey: ['electionResults'],
+    queryFn: fetchResults,
+    refetchOnWindowFocus: true,
+    refetchInterval: 30000, // Refetch every 30s as a fallback for real-time updates
+  });
+
+  if (error) {
+    toast({
+      title: "Error",
+      description: "Failed to load election results",
+      variant: "destructive",
+    });
   }
 
   return (
     <Layout>
       <h1 className="text-3xl font-bold mb-6">Election Results</h1>
       
-      {loading ? (
+      {isLoading ? (
         <div className="flex justify-center items-center h-64">
           <p>Loading results...</p>
         </div>
@@ -123,16 +158,31 @@ const Results = () => {
               <CardHeader>
                 <CardTitle>{election.title}</CardTitle>
                 <p className="text-sm text-gray-500">
-                  Ended on {new Date(election.end_date).toLocaleDateString()}
+                  Ended on {new Date(election.endDate).toLocaleDateString()}
                 </p>
               </CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={election.data}>
+                  <BarChart data={election.results.map(result => ({
+                    name: result.candidateName,
+                    party: result.party,
+                    votes: result.voteCount
+                  }))}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="name" />
                     <YAxis />
-                    <Tooltip />
+                    <Tooltip content={({ active, payload }) => {
+                      if (active && payload && payload.length) {
+                        return (
+                          <div className="bg-white p-2 border rounded shadow">
+                            <p className="font-bold">{`${payload[0].payload.name}`}</p>
+                            <p className="text-sm text-gray-500">{`${payload[0].payload.party}`}</p>
+                            <p className="text-sm">{`Votes: ${payload[0].value}`}</p>
+                          </div>
+                        );
+                      }
+                      return null;
+                    }} />
                     <Legend />
                     <Bar dataKey="votes" fill="#3b82f6" />
                   </BarChart>
