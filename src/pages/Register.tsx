@@ -33,12 +33,17 @@ const Register = () => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       console.log('Auth state changed:', event, session);
       if (event === 'SIGNED_IN' && session) {
-        navigate("/");
+        // New users are always voters by default
+        toast({
+          title: "Registration successful!",
+          description: "Redirecting you to the elections page...",
+        });
+        navigate("/elections");
       }
     });
 
     return () => subscription.unsubscribe();
-  }, [navigate]);
+  }, [navigate, toast]);
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -63,13 +68,17 @@ const Register = () => {
       }
 
       if (data?.user) {
+        // Redirect will be handled by auth state change listener
         toast({
           title: "Registration successful!",
-          description: "Please check your email to verify your account.",
+          description: data.session ? "Logging you in..." : "Please check your email to verify your account.",
         });
         
-        // Wait a moment before redirecting to login
-        setTimeout(() => navigate("/login"), 2000);
+        // If we have a session, the user is already logged in
+        if (!data.session) {
+          // Only redirect to login if email verification is required
+          setTimeout(() => navigate("/login"), 2000);
+        }
       } else {
         throw new Error('Registration failed - no user data returned');
       }

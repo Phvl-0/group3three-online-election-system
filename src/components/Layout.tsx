@@ -1,7 +1,8 @@
-import React, { useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+
+import React, { useState, useEffect } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Home, Vote, Settings, Menu } from "lucide-react";
+import { Home, Vote, Settings, Menu, LogOut, LogIn, UserPlus } from "lucide-react";
 import {
   Sheet,
   SheetContent,
@@ -9,6 +10,8 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/components/ui/use-toast";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -16,9 +19,71 @@ interface LayoutProps {
 
 const Layout = ({ children }: LayoutProps) => {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { toast } = useToast();
   const [isOpen, setIsOpen] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        // Check if user is logged in
+        const { data: { session } } = await supabase.auth.getSession();
+        setIsLoggedIn(!!session);
+
+        if (session) {
+          // Check if user is admin
+          const { data, error } = await supabase.rpc('has_role', {
+            '_role': 'admin'
+          });
+          
+          if (error) throw error;
+          setIsAdmin(!!data);
+        }
+      } catch (error) {
+        console.error('Error checking authentication:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    checkAuth();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'SIGNED_IN') {
+        setIsLoggedIn(true);
+        checkAuth();
+      } else if (event === 'SIGNED_OUT') {
+        setIsLoggedIn(false);
+        setIsAdmin(false);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   const isActive = (path: string) => location.pathname === path;
+
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut();
+      toast({
+        title: "Logged out",
+        description: "You have been successfully logged out.",
+      });
+      navigate("/");
+    } catch (error) {
+      console.error('Logout error:', error);
+      toast({
+        title: "Error",
+        description: "Failed to log out.",
+        variant: "destructive",
+      });
+    }
+  };
 
   const NavLinks = () => (
     <>
@@ -40,17 +105,54 @@ const Layout = ({ children }: LayoutProps) => {
           Elections
         </Button>
       </Link>
-      <Link to="/admin">
+      {isAdmin && (
+        <Link to="/admin">
+          <Button
+            variant={isActive("/admin") ? "secondary" : "ghost"}
+            className="text-white hover:text-white w-full justify-start"
+          >
+            <Settings className="mr-2 h-4 w-4" />
+            Admin
+          </Button>
+        </Link>
+      )}
+      {isLoggedIn ? (
         <Button
-          variant={isActive("/admin") ? "secondary" : "ghost"}
+          variant="ghost"
           className="text-white hover:text-white w-full justify-start"
+          onClick={handleLogout}
         >
-          <Settings className="mr-2 h-4 w-4" />
-          Admin
+          <LogOut className="mr-2 h-4 w-4" />
+          Logout
         </Button>
-      </Link>
+      ) : (
+        <>
+          <Link to="/login">
+            <Button
+              variant={isActive("/login") ? "secondary" : "ghost"}
+              className="text-white hover:text-white w-full justify-start"
+            >
+              <LogIn className="mr-2 h-4 w-4" />
+              Login
+            </Button>
+          </Link>
+          <Link to="/register">
+            <Button
+              variant={isActive("/register") ? "secondary" : "ghost"}
+              className="text-white hover:text-white w-full justify-start"
+            >
+              <UserPlus className="mr-2 h-4 w-4" />
+              Register
+            </Button>
+          </Link>
+        </>
+      )}
     </>
   );
+
+  if (loading) {
+    return <div className="min-h-screen bg-background flex items-center justify-center">Loading...</div>;
+  }
 
   return (
     <div className="min-h-screen bg-background">

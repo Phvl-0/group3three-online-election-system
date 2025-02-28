@@ -21,7 +21,7 @@ const Login = () => {
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        navigate("/");
+        redirectBasedOnRole(session.user.id);
       }
     };
     
@@ -29,13 +29,48 @@ const Login = () => {
 
     // Setup auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'SIGNED_IN') {
-        navigate("/");
+      if (event === 'SIGNED_IN' && session) {
+        redirectBasedOnRole(session.user.id);
       }
     });
 
     return () => subscription.unsubscribe();
   }, [navigate]);
+
+  // Function to check role and redirect accordingly
+  const redirectBasedOnRole = async (userId: string) => {
+    try {
+      console.log('Checking role for user:', userId);
+      
+      const { data, error } = await supabase.rpc('has_role', {
+        '_role': 'admin'
+      });
+
+      console.log('Role check response:', { data, error });
+
+      if (error) throw error;
+
+      if (data) {
+        console.log('User is admin, redirecting to admin dashboard');
+        toast({
+          title: "Welcome Admin",
+          description: "You've been logged in as an administrator",
+        });
+        navigate("/admin");
+      } else {
+        console.log('User is a voter, redirecting to elections page');
+        toast({
+          title: "Login successful!",
+          description: "Welcome back!",
+        });
+        navigate("/elections");
+      }
+    } catch (error) {
+      console.error('Error checking role:', error);
+      // Default to regular user if role check fails
+      navigate("/elections");
+    }
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,12 +92,11 @@ const Login = () => {
       }
 
       if (data?.user) {
+        // Redirect will be handled by auth state change listener
         toast({
           title: "Login successful!",
-          description: "Welcome back!",
+          description: "Redirecting you to the appropriate dashboard...",
         });
-        
-        navigate("/");
       } else {
         throw new Error('Login failed - no user data returned');
       }
