@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -8,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ImageUpload } from "@/components/shared/ImageUpload";
 import { useAddElection } from "@/utils/electionUtils";
-import { supabase } from "@/utils/supabase";
+import { supabase } from "@/integrations/supabase/client";
 
 interface ElectionFormData {
   title: string;
