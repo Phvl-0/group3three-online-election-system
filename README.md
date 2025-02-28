@@ -53,5 +53,5 @@ VoteSecure is a secure online election system designed to provide a reliable and
 - Protection against common web vulnerabilities (XSS, SQL injection, etc.)
 
 # Create Real life Elections with VoteSecure🗳️  ⬇️⬇️⬇️
-: *https://votesecure-online-election-system.lovable.app/*
+: *https://preview--votesecure-online-election-system.lovable.app/*
 ☑️
