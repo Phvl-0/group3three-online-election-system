@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Home, Vote, Settings, Menu, LogOut, LogIn, UserPlus } from "lucide-react";
+import { Home, Vote, Settings, Menu, LogOut, LogIn, UserPlus, BarChart, User, ListChecks } from "lucide-react";
 import {
   Sheet,
   SheetContent,
@@ -85,7 +85,7 @@ const Layout = ({ children }: LayoutProps) => {
     }
   };
 
-  const NavLinks = () => (
+  const GuestNavLinks = () => (
     <>
       <Link to="/">
         <Button
@@ -105,6 +105,65 @@ const Layout = ({ children }: LayoutProps) => {
           Elections
         </Button>
       </Link>
+      <Link to="/login">
+        <Button
+          variant={isActive("/login") ? "secondary" : "ghost"}
+          className="text-white hover:text-white w-full justify-start"
+        >
+          <LogIn className="mr-2 h-4 w-4" />
+          Login
+        </Button>
+      </Link>
+      <Link to="/register">
+        <Button
+          variant={isActive("/register") ? "secondary" : "ghost"}
+          className="text-white hover:text-white w-full justify-start"
+        >
+          <UserPlus className="mr-2 h-4 w-4" />
+          Register
+        </Button>
+      </Link>
+    </>
+  );
+
+  const UserNavLinks = () => (
+    <>
+      <Link to="/">
+        <Button
+          variant={isActive("/") ? "secondary" : "ghost"}
+          className="text-white hover:text-white w-full justify-start"
+        >
+          <Home className="mr-2 h-4 w-4" />
+          Home
+        </Button>
+      </Link>
+      <Link to="/elections">
+        <Button
+          variant={isActive("/elections") ? "secondary" : "ghost"}
+          className="text-white hover:text-white w-full justify-start"
+        >
+          <Vote className="mr-2 h-4 w-4" />
+          Vote Now
+        </Button>
+      </Link>
+      <Link to="/results">
+        <Button
+          variant={isActive("/results") ? "secondary" : "ghost"}
+          className="text-white hover:text-white w-full justify-start"
+        >
+          <BarChart className="mr-2 h-4 w-4" />
+          Results
+        </Button>
+      </Link>
+      <Link to="/profile">
+        <Button
+          variant={isActive("/profile") ? "secondary" : "ghost"}
+          className="text-white hover:text-white w-full justify-start"
+        >
+          <User className="mr-2 h-4 w-4" />
+          My Profile
+        </Button>
+      </Link>
       {isAdmin && (
         <Link to="/admin">
           <Button
@@ -112,41 +171,18 @@ const Layout = ({ children }: LayoutProps) => {
             className="text-white hover:text-white w-full justify-start"
           >
             <Settings className="mr-2 h-4 w-4" />
-            Admin
+            Admin Dashboard
           </Button>
         </Link>
       )}
-      {isLoggedIn ? (
-        <Button
-          variant="ghost"
-          className="text-white hover:text-white w-full justify-start"
-          onClick={handleLogout}
-        >
-          <LogOut className="mr-2 h-4 w-4" />
-          Logout
-        </Button>
-      ) : (
-        <>
-          <Link to="/login">
-            <Button
-              variant={isActive("/login") ? "secondary" : "ghost"}
-              className="text-white hover:text-white w-full justify-start"
-            >
-              <LogIn className="mr-2 h-4 w-4" />
-              Login
-            </Button>
-          </Link>
-          <Link to="/register">
-            <Button
-              variant={isActive("/register") ? "secondary" : "ghost"}
-              className="text-white hover:text-white w-full justify-start"
-            >
-              <UserPlus className="mr-2 h-4 w-4" />
-              Register
-            </Button>
-          </Link>
-        </>
-      )}
+      <Button
+        variant="ghost"
+        className="text-white hover:text-white w-full justify-start"
+        onClick={handleLogout}
+      >
+        <LogOut className="mr-2 h-4 w-4" />
+        Logout
+      </Button>
     </>
   );
 
@@ -165,7 +201,7 @@ const Layout = ({ children }: LayoutProps) => {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex gap-4">
-            <NavLinks />
+            {isLoggedIn ? <UserNavLinks /> : <GuestNavLinks />}
           </div>
 
           {/* Mobile Navigation */}
@@ -180,7 +216,7 @@ const Layout = ({ children }: LayoutProps) => {
                 <SheetTitle className="text-white">Menu</SheetTitle>
               </SheetHeader>
               <div className="flex flex-col gap-2 mt-4">
-                <NavLinks />
+                {isLoggedIn ? <UserNavLinks /> : <GuestNavLinks />}
               </div>
             </SheetContent>
           </Sheet>

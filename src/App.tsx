@@ -11,6 +11,8 @@ import ElectionDetails from "./pages/ElectionDetails";
 import AdminDashboard from "./pages/AdminDashboard";
 import Register from "./pages/Register";
 import Login from "./pages/Login";
+import Results from "./pages/Results";
+import Profile from "./pages/Profile";
 
 const queryClient = new QueryClient();
 
@@ -26,6 +28,8 @@ const App = () => (
             <Route path="/admin" element={<AdminDashboard />} />
             <Route path="/register" element={<Register />} />
             <Route path="/login" element={<Login />} />
+            <Route path="/results" element={<Results />} />
+            <Route path="/profile" element={<Profile />} />
           </Routes>
           <Toaster />
           <Sonner />
